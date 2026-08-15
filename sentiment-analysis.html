@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit 3: Break a Real NLP Model</title>
+<style>
+  :root {
+    --navy: #003366;
+    --navy-light: #0a4a8a;
+    --gold: #F2A900;
+    --panel: #F2F6FA;
+    --text: #1a1a1a;
+    --gray: #5a6570;
+    --border: #d7e0ea;
+    --positive: #1e6b3c;
+    --positive-bg: #e6f4ea;
+    --negative: #9c2b2b;
+    --negative-bg: #fbeaea;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    background: #ffffff;
+    color: var(--text);
+    color-scheme: light;
+  }
+
+  header {
+    background: var(--navy);
+    color: #ffffff;
+    padding: 28px 24px 24px;
+    border-bottom: 5px solid var(--gold);
+  }
+
+  header .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+
+  header h1 {
+    margin: 0 0 8px;
+    font-size: 26px;
+    line-height: 1.25;
+  }
+
+  header p {
+    margin: 0;
+    max-width: 640px;
+    font-size: 15px;
+    color: #d7e4f2;
+    line-height: 1.5;
+  }
+
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 28px 24px 60px;
+  }
+
+  .status-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--gold);
+    border-radius: 4px;
+    padding: 16px 18px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: var(--navy);
+  }
+
+  .status-panel.ready {
+    border-left-color: var(--positive);
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2.5px solid #c7d6e6;
+    border-top-color: var(--navy);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  .status-panel.ready .spinner { display: none; }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .progress-track {
+    margin-top: 10px;
+    height: 6px;
+    background: #dbe6f0;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--navy);
+    width: 0%;
+    transition: width 0.2s ease;
+  }
+
+  section h2 {
+    color: var(--navy);
+    font-size: 18px;
+    border-bottom: 3px solid var(--gold);
+    padding-bottom: 8px;
+    margin: 32px 0 12px;
+  }
+
+  section h2:first-of-type { margin-top: 0; }
+
+  .examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .example-btn {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    color: var(--navy);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .example-btn:hover:not(:disabled) {
+    background: var(--panel);
+    border-color: var(--navy);
+  }
+
+  .example-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 90px;
+    font-family: inherit;
+    font-size: 15px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    resize: vertical;
+    color: var(--text);
+  }
+
+  textarea:focus {
+    outline: 2px solid var(--navy);
+    outline-offset: 1px;
+  }
+
+  .run-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+  }
+
+  button.run-btn {
+    background: var(--navy);
+    color: #ffffff;
+    border: none;
+    padding: 11px 22px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  button.run-btn:hover:not(:disabled) {
+    background: var(--navy-light);
+  }
+
+  button.run-btn:disabled {
+    background: #a9b6c3;
+    cursor: not-allowed;
+  }
+
+  button.run-btn:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  .run-hint {
+    font-size: 13px;
+    color: var(--gray);
+  }
+
+  #results {
+    margin-top: 24px;
+  }
+
+  .result-card {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    animation: fadeIn 0.25s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-sentence {
+    font-size: 15px;
+    color: var(--text);
+    margin: 0 0 10px;
+    font-style: italic;
+  }
+
+  .result-verdict {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .label-chip {
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+
+  .label-chip.positive {
+    background: var(--positive-bg);
+    color: var(--positive);
+  }
+
+  .label-chip.negative {
+    background: var(--negative-bg);
+    color: var(--negative);
+  }
+
+  .confidence-text {
+    font-size: 14px;
+    color: var(--gray);
+  }
+
+  .confidence-bar-track {
+    margin-top: 8px;
+    height: 8px;
+    background: #eef2f6;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .confidence-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+  }
+
+  .confidence-bar-fill.positive { background: var(--positive); }
+  .confidence-bar-fill.negative { background: var(--negative); }
+
+  footer {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px 40px;
+    font-size: 13px;
+    color: var(--gray);
+    line-height: 1.6;
+  }
+
+  footer a { color: var(--navy); }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .spinner, .result-card, .progress-fill, .confidence-bar-fill { animation: none; transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">ARIN 310 &middot; Unit 3</p>
+  <h1>Break a Real NLP Model</h1>
+  <p>This page runs a real, production-grade sentiment analysis model &mdash; right here in your browser. No sign-up, no account, no API key. The model downloads once and then runs entirely on your own device.</p>
+</header>
+
+<main>
+
+  <div class="status-panel" id="statusPanel" role="status" aria-live="polite">
+    <div class="status-row">
+      <div class="spinner" id="spinner" aria-hidden="true"></div>
+      <span id="statusText">Loading the model&hellip; this can take up to a minute the first time.</span>
+    </div>
+    <div class="progress-track" id="progressTrack">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Step 1 &middot; Try the built-in examples</h2>
+    <p>Each one is designed to challenge the model in a different way. Click one to see how it's classified.</p>
+    <div class="examples" id="exampleButtons">
+      <button class="example-btn" disabled data-text="This product broke after one day. Total waste of money.">Plain negative</button>
+      <button class="example-btn" disabled data-text="Oh great, another broken product, love it.">Sarcasm</button>
+      <button class="example-btn" disabled data-text="my card got ate by the ATM fr fr">Slang</button>
+      <button class="example-btn" disabled data-text="Not bad for a first attempt, but I wouldn't call it acceptable yet.">Mixed / hedged</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Step 2 &middot; Try your own sentence</h2>
+    <p>Type anything &mdash; a sentence from your own field, something sarcastic, something with mixed feelings. Then run it through the model.</p>
+    <label for="userInput" class="sr-only">Sentence to analyze</label>
+    <textarea id="userInput" placeholder="Type a sentence here&hellip;" disabled></textarea>
+    <div class="run-row">
+      <button class="run-btn" id="runBtn" disabled>Analyze sentence</button>
+      <span class="run-hint" id="runHint">Waiting for the model to finish loading&hellip;</span>
+    </div>
+  </section>
+
+  <div id="results"></div>
+
+</main>
+
+<footer>
+  <p>Model: <a href="https://huggingface.co/distilbert/distilbert-base-uncased-finetuned-sst-2-english" target="_blank" rel="noopener">distilbert-base-uncased-finetuned-sst-2-english</a>, run in-browser via <a href="https://github.com/xenova/transformers.js" target="_blank" rel="noopener">Transformers.js</a>. Nothing you type here is sent to a server &mdash; the model runs locally on your device after the initial download.</p>
+</footer>
+
+<script type="module">
+  import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+
+  // Always fetch from the Hugging Face Hub; skip local model checks.
+  env.allowLocalModels = false;
+
+  const statusPanel = document.getElementById('statusPanel');
+  const statusText = document.getElementById('statusText');
+  const spinner = document.getElementById('spinner');
+  const progressTrack = document.getElementById('progressTrack');
+  const progressFill = document.getElementById('progressFill');
+  const exampleButtons = document.querySelectorAll('.example-btn');
+  const userInput = document.getElementById('userInput');
+  const runBtn = document.getElementById('runBtn');
+  const runHint = document.getElementById('runHint');
+  const results = document.getElementById('results');
+
+  let classifier = null;
+  const seenFiles = {};
+
+  function updateProgress(data) {
+    if (data.status === 'progress' && data.file) {
+      seenFiles[data.file] = data.progress || 0;
+      const values = Object.values(seenFiles);
+      const avg = values.reduce((a, b) => a + b, 0) / values.length;
+      progressFill.style.width = Math.min(avg, 100) + '%';
+      statusText.textContent = `Downloading model files\u2026 ${Math.round(avg)}%`;
+    }
+  }
+
+  function renderResult(sentence, label, score) {
+    const isPositive = label === 'POSITIVE';
+    const pct = (score * 100).toFixed(1);
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.innerHTML = `
+      <p class="result-sentence">&ldquo;${sentence.replace(/</g, '&lt;')}&rdquo;</p>
+      <div class="result-verdict">
+        <span class="label-chip ${isPositive ? 'positive' : 'negative'}">${label}</span>
+        <span class="confidence-text">${pct}% confidence</span>
+      </div>
+      <div class="confidence-bar-track">
+        <div class="confidence-bar-fill ${isPositive ? 'positive' : 'negative'}" style="width: ${pct}%;"></div>
+      </div>
+    `;
+    results.prepend(card);
+  }
+
+  async function analyze(text) {
+    if (!classifier || !text.trim()) return;
+    runBtn.disabled = true;
+    runHint.textContent = 'Analyzing\u2026';
+    try {
+      const output = await classifier(text);
+      const { label, score } = output[0];
+      renderResult(text, label, score);
+    } catch (err) {
+      runHint.textContent = 'Something went wrong \u2014 try again.';
+      console.error(err);
+    } finally {
+      runBtn.disabled = false;
+      runHint.textContent = 'Type another sentence and run it again as many times as you like.';
+    }
+  }
+
+  async function init() {
+    try {
+      classifier = await pipeline(
+        'sentiment-analysis',
+        'Xenova/distilbert-base-uncased-finetuned-sst-2-english',
+        { progress_callback: updateProgress }
+      );
+
+      statusPanel.classList.add('ready');
+      statusText.textContent = 'Model loaded. Ready to analyze sentences.';
+      progressTrack.style.display = 'none';
+
+      exampleButtons.forEach((btn) => {
+        btn.disabled = false;
+        btn.addEventListener('click', () => {
+          userInput.value = btn.dataset.text;
+          analyze(btn.dataset.text);
+        });
+      });
+
+      userInput.disabled = false;
+      runBtn.disabled = false;
+      runHint.textContent = 'Type a sentence above, then click Analyze.';
+
+      runBtn.addEventListener('click', () => analyze(userInput.value));
+      userInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+          analyze(userInput.value);
+        }
+      });
+    } catch (err) {
+      statusText.textContent = 'The model failed to load. Try reloading this page.';
+      spinner.style.display = 'none';
+      console.error(err);
+    }
+  }
+
+  init();
+</script>
+
+</body>
+</html>
